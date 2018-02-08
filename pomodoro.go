@@ -2,33 +2,12 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"log"
 	"time"
 
-	"github.com/0xAX/notificator"
 	"github.com/deckarep/gosx-notifier"
 )
-
-var notify *notificator.Notificator
-
-func sendNotification(msg string) {
-
-	notify = notificator.New(notificator.Options{
-		DefaultIcon: "icon/pom.png",
-		AppName:     "Pomodoro",
-	})
-
-	notify.Push("", msg, "/Users/nikunjshukla/Desktop/pom.png", notificator.UR_CRITICAL)
-}
-
-func showNotification(message string) {
-
-	note := gosxnotifier.NewNotification(message)
-	note.Title = "Site Down"
-	note.Sound = gosxnotifier.Default
-
-	note.Push()
-
-}
 
 func main() {
 
@@ -43,6 +22,7 @@ func main() {
 
 	flag.Parse()
 
+	fmt.Println("Mode : ", *environment)
 	if *environment == "development" {
 		pomodoroTime = time.Second * time.Duration(*pomodoroTimeFlag)
 		shortBreakTime = time.Second * time.Duration(*shortBreakTimeFlag)
@@ -53,20 +33,73 @@ func main() {
 		longBreakTime = time.Minute * time.Duration(*longBreakTimeFlag)
 	}
 
-	sendNotification("Pomodoro starts now")
+	showNotification("Pomodoro starts now")
+
 	for i := 1; i <= pomodoroCount; i++ {
-		time.Sleep(pomodoroTime)
+		fmt.Printf("\npomodoro %d started\n", i)
+		pomodoroEndsAt := time.Now().Add(pomodoroTime)
+		pomodoroTicker := time.NewTicker(time.Second * 1)
+		pomodoroTimer := time.NewTimer(pomodoroTime)
+		go PrintTick(pomodoroEndsAt, pomodoroTicker)
+		<-pomodoroTimer.C
+		pomodoroTicker.Stop()
+
 		if i%4 == 0 {
-			sendNotification("long break time")
+			fmt.Printf("\n----- long break -----\n")
 			showNotification("long break time")
-			time.Sleep(longBreakTime)
-			sendNotification("long break ends")
+			longBreakEndsAt := time.Now().Add(longBreakTime)
+			longBreakTicker := time.NewTicker(time.Second * 1)
+			longBreakTimer := time.NewTimer(longBreakTime)
+			go PrintTick(longBreakEndsAt, longBreakTicker)
+			<-longBreakTimer.C
+			longBreakTicker.Stop()
 			showNotification("long break ends")
+		} else {
+			showNotification("short break time")
+			fmt.Printf("\n----- short break -----\n")
+			shortBreakEndsAt := time.Now().Add(shortBreakTime)
+			shortBreakTicker := time.NewTicker(time.Second * 1)
+			shortBreakTimer := time.NewTimer(shortBreakTime)
+			go PrintTick(shortBreakEndsAt, shortBreakTicker)
+			<-shortBreakTimer.C
+			shortBreakTicker.Stop()
+			showNotification("short break ends")
 		}
-		sendNotification("short break time")
-		showNotification("short break time")
-		time.Sleep(shortBreakTime)
-		sendNotification("short break ends")
-		showNotification("short break ends")
+
 	}
+}
+
+func PrintTick(et time.Time, tick *time.Ticker) {
+	for t := range tick.C {
+		fmt.Printf("\rDue time : %s", fmtDuration(et.Sub(t)))
+	}
+}
+
+func fmtDuration(d time.Duration) string {
+	d = d.Round(time.Second)
+	m := d / time.Minute
+	d -= m * time.Minute
+	s := d / time.Second
+	return fmt.Sprintf("%02d:%02d", m, s)
+}
+
+func showNotification(message string) {
+
+	note := gosxnotifier.NewNotification(message)
+	note.Title = "Pomodoro notification"
+	note.Sound = gosxnotifier.Glass
+
+	//Optionally, an app icon (10.9+ ONLY)
+	note.AppIcon = "./icon/pom.png"
+
+	//Optionally, a content image (10.9+ ONLY)
+	// note.ContentImage = "./icon/pom.png"
+
+	err := note.Push()
+
+	//If necessary, check error
+	if err != nil {
+		log.Println("Error while pushing the notifications!")
+	}
+
 }
