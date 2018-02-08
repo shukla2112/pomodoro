@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/0xAX/notificator"
+	"github.com/deckarep/gosx-notifier"
 )
 
 var notify *notificator.Notificator
@@ -17,6 +18,16 @@ func sendNotification(msg string) {
 	})
 
 	notify.Push("", msg, "/Users/nikunjshukla/Desktop/pom.png", notificator.UR_CRITICAL)
+}
+
+func showNotification(message string) {
+
+	note := gosxnotifier.NewNotification(message)
+	note.Title = "Site Down"
+	note.Sound = gosxnotifier.Default
+
+	note.Push()
+
 }
 
 func main() {
@@ -47,11 +58,15 @@ func main() {
 		time.Sleep(pomodoroTime)
 		if i%4 == 0 {
 			sendNotification("long break time")
+			showNotification("long break time")
 			time.Sleep(longBreakTime)
 			sendNotification("long break ends")
+			showNotification("long break ends")
 		}
 		sendNotification("short break time")
+		showNotification("short break time")
 		time.Sleep(shortBreakTime)
 		sendNotification("short break ends")
+		showNotification("short break ends")
 	}
 }

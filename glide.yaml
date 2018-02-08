@@ -1,0 +1,4 @@
+package: github.com/shukla2112/pomodoro
+import:
+- package: github.com/0xAX/notificator
+- package: github.com/deckarep/gosx-notifier

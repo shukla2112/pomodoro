@@ -26,3 +26,5 @@ _testmain.go
 .*.swp
 pomodoro
 pseudocode.md
+
+vendor/*
